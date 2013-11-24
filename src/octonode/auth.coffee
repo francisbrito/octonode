@@ -5,7 +5,7 @@
 #
 
 # Requiring modules
-request = require 'request'
+request = require 'browser-request'
 url = require 'url'
 qs = require 'querystring'
 randomstring = require 'randomstring'
