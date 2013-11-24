@@ -6,42 +6,41 @@
 
 # Requiring modules
 
+# Helpers
+_searchQueryGenerator = (endpoint) ->
+	return (q, sort, order, qualifiers, cb) ->
+		qArgs = []
+
+		qArgs.push q
+		qArgs.push "#{qaKey}:#{qaValue}" for qaKey, qaValue of qualifiers
+		qArgs = qArgs.join('+')
+
+		params = ""
+		params += "q=#{qArgs}"
+		params += "&sort=#{sort}&" if sort
+		params += "order=#{order}" if order
+
+		@client.get "/search/#{endpoint}?#{params}", (err, s, b) ->
+			return cb(err) if err
+			if s isnt 200 then cb(new Error("Search #{endpoint} error")) else cb null, b
+
 # Initiate class
 class Search
 
   constructor: (@client) ->
 
-  # Search issues
-  issues: (repo, state, keyword, cb) ->
-    state = 'open' if state isnt 'closed'
-    @client.get "/search/issues/#{repo}/#{state}/#{keyword}", (err, s, b) ->
-      return cb(err) if err
-      if s isnt 200 then cb(new Error('Search issues error')) else cb null, b.issues
-
   # Search repositories
-  repos: (keyword, language, start_page, cb) ->
-    param = ''
-    param+= "language=#{language}&" if language
-    param+= "start_page=#{start_page}&" if start_page
+  repos: _searchQueryGenerator 'repositories'
 
-    @client.get "/search/repositories/#{keyword}?#{param}", (err, s, b) ->
-      return cb(err) if err
-      if s isnt 200 then cb(new Error('Search repos error')) else cb null, b.repositories
+  # Search code
+  code: _searchQueryGenerator 'code'
 
   # Search users
-  users: (keyword, start_page, cb) ->
-    param = ''
-    param+= "start_page=#{start_page}&" if start_page
+  users: _searchQueryGenerator 'users'
 
-    @client.get "/search/users/#{keyword}?#{param}", (err, s, b) ->
-      return cb(err) if err
-      if s isnt 200 then cb(new Error('Search users error')) else cb null, b.users
+  # Search issues
+  issues: _searchQueryGenerator 'issues'
 
-  # Search emails
-  emails: (email, cb) ->
-    @client.get "/legacy/user/email/#{email}", (err, s, b) ->
-      return cb(err) if err
-      if s isnt 200 then cb(new Error('Search email error')) else cb null, b.user
 
 # Export module
 module.exports = Search
